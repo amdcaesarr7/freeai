@@ -48,7 +48,9 @@ function MessageBubble({ message }) {
         )}
 
         {/* Render Text Content */}
-        {message.content && (
+        {message.content === 'Generating image...' ? (
+          <div className="skeleton skeleton-image" style={{ maxWidth: 400 }} />
+        ) : message.content && (
           isUser ? (
             <div style={{ whiteSpace: 'pre-wrap' }}>{message.content}</div>
           ) : (

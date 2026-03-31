@@ -40,9 +40,13 @@ function ChatWindow({ messages, isTyping, error }) {
         ))}
         
         {isTyping && messages[messages.length - 1]?.role === 'user' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, opacity: 0.7 }}>
-            <Loader2 size={20} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
-            <span style={{ fontSize: 14 }}>Grok is thinking...</span>
+          <div style={{ display: 'flex', gap: 16, marginTop: 24 }}>
+             <div className="skeleton" style={{ width: 32, height: 32, borderRadius: '6px' }} />
+             <div style={{ flex: 1 }}>
+               <div className="skeleton skeleton-text" style={{ width: '90%' }} />
+               <div className="skeleton skeleton-text" style={{ width: '70%' }} />
+               <div className="skeleton skeleton-text" style={{ width: '40%' }} />
+             </div>
           </div>
         )}
 

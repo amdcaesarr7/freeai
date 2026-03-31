@@ -5,7 +5,7 @@ import { useDictation } from './hooks/useDictation';
 import ModelSelector from './components/ModelSelector';
 import ChatWindow from './components/ChatWindow';
 import MessageInput from './components/MessageInput';
-import { Bot, Menu, X, PlusCircle, Loader2 } from 'lucide-react';
+import { Bot, Menu, X, PlusCircle } from 'lucide-react';
 
 function App() {
   const { models, favorites, activeModel, loading, toggleFavorite, selectModel } = useModels();
@@ -81,7 +81,7 @@ function App() {
         
         {loading ? (
           <div style={{ padding: 20, textAlign: 'center', opacity: 0.5 }}>
-            <Loader2 size={24} className="spinner" style={{ margin: '0 auto' }} />
+            <div className="spinner" style={{ margin: '0 auto', width: 24, height: 24, border: '2px solid var(--text-secondary)', borderTopColor: 'transparent', borderRadius: '50%' }} />
           </div>
         ) : (
           <ModelSelector 

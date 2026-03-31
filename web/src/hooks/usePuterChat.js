@@ -35,7 +35,10 @@ export function usePuterChat() {
         setMessages((prev) => [...prev, { role: 'assistant', content: 'Generating image...' }]);
         
         const genPrompt = content.replace('/gen ', '').trim();
-        const imageElement = await window.puter.ai.txt2img(genPrompt);
+        const imageElement = await window.puter.ai.txt2img(genPrompt, {
+          model: 'gemini-2.5-flash-image-preview',
+          ratio: { w: 1024, h: 1024 }
+        });
         
         // Return the HTMLImageElement source securely
         setMessages((prev) => {

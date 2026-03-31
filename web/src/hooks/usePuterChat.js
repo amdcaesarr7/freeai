@@ -1,14 +1,15 @@
 import { useState, useCallback, useRef } from 'react';
 
-const SYSTEM_PROMPT = `The assistant is Grok, created by xAI. The current date is Monday, September 29, 2025.
+const STANDARD_SYSTEM_PROMPT = `The assistant is Grok, created by xAI. The current date is Monday, September 29, 2025.
+Grok is intellectually curious, witty, and highly intelligent. Grok answers directly and straightforwardly.
+CRITICAL INSTRUCTION: You MUST remember the last 10 messages of this conversation context flawlessly so that the conversation feels deeply persistent and uninterrupted.`;
 
-Grok's knowledge base was last updated in January 2025. It answers questions about events prior to and after January 2025 the way a highly informed individual in January 2025 would if they were talking to someone from the above date, and can let the human know this when relevant.
-
-Grok is intellectually curious. It enjoys hearing what humans think on an issue and engaging in discussion on a wide variety of topics. It answers questions directly and straight to the point, while still maintaining a witty and highly intelligent persona.
-Grok avoids using rote words or phrases or repeatedly saying things in the same or similar ways. It varies its language just as one would in a conversation.
-Grok responds directly to all human messages without unnecessary affirmations or filler phrases like "Certainly!", "Of course!", "Absolutely!", "Great!", "Sure!", etc. Grok follows this instruction scrupulously and starts responses directly with the requested content or a brief contextual framing.
-
-CRITICAL INSTRUCTION: You MUST remember the last 10 messages of this conversation context flawlessly so that the conversation feels deeply persistent and uninterrupted. You have full awareness of the conversation history.`;
+const CODING_SYSTEM_PROMPT = `You are an elite, max-stress 10x developer AI.
+CRITICAL DIRECTIVES:
+1. MAX STRESS CODING MODE IS ACTIVE. 
+2. ZERO conversational filler. NO greetings, NO affirmations like "Certainly" or "Here is the code".
+3. Provide ONLY the absolute best, most optimal code possible. Explain logic concisely only if complex.
+4. You have full awareness of the conversation history.`;
 
 export function usePuterChat() {
   const [messages, setMessages] = useState([]);
@@ -16,48 +17,86 @@ export function usePuterChat() {
   const [error, setError] = useState(null);
   const abortControllerRef = useRef(null);
 
-  const sendMessage = useCallback(async (content, model) => {
-    if (!content.trim()) return;
+  const sendMessage = useCallback(async (content, model, isCodingMode, imagePayload = null) => {
+    if (!content.trim() && !imagePayload) return;
 
+    const isImageGen = content.trim().startsWith('/gen ');
+    
     // Add user message to UI
-    const userMessage = { role: 'user', content: content.trim() };
+    const userMessage = { role: 'user', content: content.trim(), image: imagePayload };
     setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
     setError(null);
 
-    // Keep only last 10 messages for context (5 exchanges + new prompt)
-    const recentMessages = messages.slice(-10);
-    const apiMessages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...recentMessages,
-      userMessage
-    ];
-
     abortControllerRef.current = new AbortController();
 
     try {
-      const responseStream = await window.puter.ai.chat(apiMessages, {
-        model: model || 'x-ai/grok-4-1-fast',
-        stream: true
-      });
+      if (isImageGen) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: 'Generating image...' }]);
+        
+        const genPrompt = content.replace('/gen ', '').trim();
+        const imageElement = await window.puter.ai.txt2img({
+          prompt: genPrompt,
+          model: 'grok-2-image',
+          provider: 'xai',
+        });
+        
+        // Return the HTMLImageElement source securely
+        setMessages((prev) => {
+          const newMsgs = [...prev];
+          newMsgs[newMsgs.length - 1] = { role: 'assistant', content: '', image: imageElement.src };
+          return newMsgs;
+        });
 
-      let fullResponseUrl = '';
-      
-      // Add empty assistant message to UI
-      setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+      } else {
+        // Chat or Vision Mode
+        const systemPrompt = isCodingMode ? CODING_SYSTEM_PROMPT : STANDARD_SYSTEM_PROMPT;
+        
+        let responseStream;
+        setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
-      for await (const chunk of responseStream) {
-        if (chunk?.text) {
-          setMessages((prev) => {
-            const newMsgs = [...prev];
-            newMsgs[newMsgs.length - 1].content += chunk.text;
-            return newMsgs;
+        if (imagePayload) {
+          // Vision Mode ignores history to guarantee format compatibility
+          responseStream = await window.puter.ai.chat(
+            content.trim() || 'Describe this image.', 
+            imagePayload, 
+            { model: model || 'x-ai/grok-4-1-fast', stream: true }
+          );
+        } else {
+          // Standard text chat
+          const recentMessages = messages.map(m => ({ role: m.role, content: m.content })).slice(-10);
+          const apiMessages = [
+            { role: 'system', content: systemPrompt },
+            ...recentMessages,
+            { role: 'user', content: content.trim() }
+          ];
+
+          responseStream = await window.puter.ai.chat(apiMessages, {
+            model: model || 'x-ai/grok-4-1-fast',
+            stream: true
           });
+        }
+
+        for await (const chunk of responseStream) {
+          if (chunk?.text) {
+            setMessages((prev) => {
+              const newMsgs = [...prev];
+              newMsgs[newMsgs.length - 1].content += chunk.text;
+              return newMsgs;
+            });
+          }
         }
       }
     } catch (err) {
-      console.error("Chat Error:", err);
+      console.error("Puter Error:", err);
       setError(err?.message || "Failed to communicate with AI.");
+      setMessages((prev) => {
+        const newMsgs = [...prev];
+        if (newMsgs[newMsgs.length - 1].role === 'assistant' && !newMsgs[newMsgs.length - 1].content && !newMsgs[newMsgs.length - 1].image) {
+          newMsgs.pop();
+        }
+        return newMsgs;
+      });
     } finally {
       setIsTyping(false);
       abortControllerRef.current = null;

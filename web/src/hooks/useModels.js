@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 
 const HARDCODED_MODELS = [
+  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
+  { id: 'x-ai/grok-code-fast-1', name: 'Grok Code Fast', provider: 'xAI' },
   { id: 'x-ai/grok-4-1-fast', name: 'Grok 4.1 Fast', provider: 'xAI' },
   { id: 'x-ai/grok-4.20-beta', name: 'Grok 4.20 Beta', provider: 'xAI' },
   { id: 'x-ai/grok-4-fast', name: 'Grok 4 Fast', provider: 'xAI' },

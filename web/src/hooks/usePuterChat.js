@@ -109,13 +109,10 @@ export function usePuterChat() {
     }
   }, []);
 
-  const updateMessage = useCallback((index, newContent, model, isCodingMode) => {
-    setMessages((prev) => {
-      const newMsgs = prev.slice(0, index);
-      return newMsgs;
-    });
-    sendMessage(newContent, model, isCodingMode);
-  }, [sendMessage]);
+  const clearChat = useCallback(() => {
+    setMessages([]);
+    setError(null);
+  }, []);
 
-  return { messages, isTyping, error, sendMessage, stopGeneration, clearChat, updateMessage };
+  return { messages, isTyping, error, sendMessage, stopGeneration, clearChat };
 }

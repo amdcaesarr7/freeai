@@ -130,28 +130,3 @@ button {
     display: flex !important;
   }
 }
-
-/* Skeleton Loading */
-@keyframes pulse {
-  0% { opacity: 0.3; }
-  50% { opacity: 0.5; }
-  100% { opacity: 0.3; }
-}
-
-.skeleton {
-  background: var(--border-subtle);
-  border-radius: 4px;
-  animation: pulse 1.5s infinite ease-in-out;
-}
-
-.skeleton-text {
-  height: 14px;
-  margin-bottom: 8px;
-  width: 100%;
-}
-
-.skeleton-image {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 12px;
-}

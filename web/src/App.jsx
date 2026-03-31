@@ -41,10 +41,6 @@ function App() {
     );
   };
 
-  const handleEditMessage = (index, newText) => {
-    updateMessage(index, newText, activeModel, isCodingMode);
-  };
-
   return (
     <div className="app-layout">
       
@@ -129,7 +125,7 @@ function App() {
           </div>
         </div>
 
-        <ChatWindow messages={messages} isTyping={isTyping} error={error} onEditMessage={handleEditMessage} />
+        <ChatWindow messages={messages} isTyping={isTyping} error={error} />
         
         <div style={{ padding: '0 20px 24px 20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
           <div className="chat-container">

@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import MessageBubble from './MessageBubble';
-import { Loader2 } from 'lucide-react';
 
 function ChatWindow({ messages, isTyping, error }) {
   const scrollRef = useRef(null);

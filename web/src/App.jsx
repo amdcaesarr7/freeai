@@ -21,21 +21,20 @@ function App() {
   };
 
   const MobileHeader = () => {
-    if (window.innerWidth > 768) return null;
     return (
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      <div className="mobile-only" style={{
+        alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)',
         background: 'var(--bg-primary)', zIndex: 10
       }}>
         <button 
           onClick={() => setIsSidebarOpen(true)}
-          style={{ background: 'none', border: 'none', color: 'var(--text-primary)' }}
+          style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}
         >
           <Menu size={24} />
         </button>
         <span style={{ fontWeight: 500 }}>{models.find(m => m.id === activeModel)?.name || 'New Chat'}</span>
-        <button onClick={clearChat} style={{ background: 'none', border: 'none', color: 'var(--text-primary)' }}>
+        <button onClick={clearChat} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
           <PlusCircle size={24} />
         </button>
       </div>
@@ -46,18 +45,16 @@ function App() {
     <div className="app-layout">
       
       {/* Sidebar Overlay (Mobile) */}
-      {isSidebarOpen && window.innerWidth <= 768 && (
+      {isSidebarOpen && (
         <div 
+          className="mobile-only"
           onClick={() => setIsSidebarOpen(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 30 }}
         />
       )}
 
       {/* Sidebar */}
-      <div className="sidebar" style={{
-        position: window.innerWidth <= 768 ? 'absolute' : 'relative',
-        transform: (window.innerWidth <= 768 && !isSidebarOpen) ? 'translateX(-100%)' : 'translateX(0)',
-      }}>
+      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ background: 'var(--text-primary)', borderRadius: '50%', padding: 4, display: 'flex' }}>
@@ -65,11 +62,9 @@ function App() {
             </div>
             <h2 style={{ fontSize: 16, fontWeight: 600 }}>Caesarr AI</h2>
           </div>
-          {window.innerWidth <= 768 && (
-            <button onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}>
-              <X size={20} />
-            </button>
-          )}
+          <button className="mobile-only" onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)' }}>
+            <X size={20} />
+          </button>
         </div>
         
         <button 
@@ -105,32 +100,30 @@ function App() {
         <MobileHeader />
         
         {/* Desktop Top Nav */}
-        {window.innerWidth > 768 && (
-          <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>
-              {models.find(m => m.id === activeModel)?.name} {isCodingMode && '(Coding Mode)'}
-            </span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {favorites.map(favId => {
-                const favM = models.find(m => m.id === favId);
-                return favM ? (
-                  <button 
-                    key={favId}
-                    onClick={() => selectModel(favId)}
-                    style={{ 
-                      padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 500,
-                      background: activeModel === favId ? 'var(--bg-sidebar)' : 'transparent',
-                      color: activeModel === favId ? '#fff' : 'var(--text-secondary)', 
-                      border: `1px solid ${activeModel === favId ? 'var(--border-subtle)' : 'transparent'}`
-                    }}
-                  >
-                    {favM.name}
-                  </button>
-                ) : null;
-              })}
-            </div>
+        <div className="desktop-only" style={{ padding: '16px 24px', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>
+            {models.find(m => m.id === activeModel)?.name} {isCodingMode && '(Coding Mode)'}
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {favorites.map(favId => {
+              const favM = models.find(m => m.id === favId);
+              return favM ? (
+                <button 
+                  key={favId}
+                  onClick={() => selectModel(favId)}
+                  style={{ 
+                    padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                    background: activeModel === favId ? 'var(--bg-sidebar)' : 'transparent',
+                    color: activeModel === favId ? '#fff' : 'var(--text-secondary)', 
+                    border: `1px solid ${activeModel === favId ? 'var(--border-subtle)' : 'transparent'}`
+                  }}
+                >
+                  {favM.name}
+                </button>
+              ) : null;
+            })}
           </div>
-        )}
+        </div>
 
         <ChatWindow messages={messages} isTyping={isTyping} error={error} />
         

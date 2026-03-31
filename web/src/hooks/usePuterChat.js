@@ -35,10 +35,9 @@ export function usePuterChat() {
         setMessages((prev) => [...prev, { role: 'assistant', content: 'Generating image...' }]);
         
         const genPrompt = content.replace('/gen ', '').trim();
-        const imageElement = await window.puter.ai.txt2img({
-          prompt: genPrompt,
-          model: 'grok-2-image',
+        const imageElement = await window.puter.ai.txt2img(genPrompt, {
           provider: 'xai',
+          model: 'grok-2-image'
         });
         
         // Return the HTMLImageElement source securely

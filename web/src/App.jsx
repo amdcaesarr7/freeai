@@ -81,7 +81,7 @@ function App() {
         
         {loading ? (
           <div style={{ padding: 20, textAlign: 'center', opacity: 0.5 }}>
-            <div className="spinner" style={{ margin: '0 auto', width: 24, height: 24, border: '2px solid var(--text-secondary)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+            <Loader2 size={24} className="spinner" style={{ margin: '0 auto' }} />
           </div>
         ) : (
           <ModelSelector 

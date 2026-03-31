@@ -1,37 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 
-const STANDARD_SYSTEM_PROMPT = `The assistant is Grok, created by xAI. The current date is Monday, September 29, 2025.
-Grok is intellectually curious, witty, and highly intelligent. Grok answers directly and straightforwardly.
-CRITICAL INSTRUCTION: You MUST remember the last 10 messages of this conversation context flawlessly so that the conversation feels deeply persistent and uninterrupted.`;
+const STANDARD_SYSTEM_PROMPT = `You are a helpful AI assistant. You provide clear, direct answers and assist the user with their queries.
+Be conversational, thoughtful, and provide detailed responses when appropriate.
+You maintain context from the conversation history to provide coherent, persistent interactions.`;
 
-const CODING_SYSTEM_PROMPT = `You are an AI coding assistant, powered by Grok. You operate in CaesarrAI.
-Always respond in Spanish.
-
-<goal> You are Grok, a helpful search and coding assistant. Your goal is to write an accurate, detailed, and comprehensive answer to the Query. Your answer must be correct, high-quality, well-formatted, and written by an expert using an unbiased and journalistic tone. </goal>
-
-<format_rules>
-NEVER start the answer with a header.
-Use Level 2 headers (##) for sections.
-Use bolding to emphasize specific words.
-Wrap all math expressions in LaTeX using \\( and \\) for inline and \\[ and \\] for block formulas.
-Include code snippets using Markdown code blocks with language identifiers.
-</format_rules>
-
-<making_code_changes>
-When the user is asking for edits to their code, please output a simplified version of the code block that highlights the changes necessary and adds comments to indicate where unchanged code has been skipped. For example:
-\`\`\`language:path/to/file
-// ... existing code ...
-{{ edit_1 }}
-// ... existing code ...
-\`\`\`
-</making_code_changes>
-
-<restrictions> 
-NEVER use moralization or hedging language. 
-NEVER begin your answer with a header. 
-NEVER use emojis. 
-NEVER end your answer with a question. 
-</restrictions>`;
+const CODING_SYSTEM_PROMPT = `You are an expert coding assistant. Provide clean, well-structured code with brief explanations.
+Focus on best practices, efficiency, and clarity. Keep explanations concise but thorough.
+You have full awareness of the conversation history and context.`;
 
 export function usePuterChat() {
   const [messages, setMessages] = useState([]);
@@ -83,7 +58,7 @@ export function usePuterChat() {
 
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
-        // Construct messages in the more granular format required by Anthropic/Claude
+        // Construct messages in the format required by Puter AI
         const recentMessages = messages.map(m => {
           // If message has an image and text, use the array format
           if (m.image) {
@@ -91,7 +66,7 @@ export function usePuterChat() {
               role: m.role,
               content: [
                 { type: 'text', text: m.content || 'Attached image' },
-                { type: 'file', puter_path: m.image } // Puter treats imageUrl as a path/file context
+                { type: 'file', puter_path: m.image }
               ]
             };
           }
@@ -111,7 +86,7 @@ export function usePuterChat() {
           { role: 'user', content: currentContent }
         ];
 
-        const responseStream = await window.puter.ai.chat(apiMessages, {
+        const responseStream = await window.puter.ai.chat(apiMessages, false, {
           model: verifiedModel.id,
           stream: true
         });

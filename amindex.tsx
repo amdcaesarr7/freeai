@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CaesarrGPT - Reimagined</title>
+    <title>CaesarrSLLM - Reimagined</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://js.puter.com/v2/"></script>
     <style>
@@ -427,7 +427,7 @@
                 <i class="fas fa-brain"></i>
             </div>
             <div class="header-text">
-                <h1>CaesarrGPT</h1>
+                <h1>CaesarrSLLM</h1>
                 <p id="chatTitle">New Conversation</p>
             </div>
             <div class="header-controls">
@@ -697,7 +697,7 @@
             return String(response).trim();
         }
 
-        console.log('✅ CaesarrGPT Reimagined - Ready!');
+        console.log('✅ CaesarrSLLM Reimagined - Ready!');
     </script>
 </body>
 </html>

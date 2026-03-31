@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useModels } from './hooks/useModels';
 import { usePuterChat } from './hooks/usePuterChat';
 import { useDictation } from './hooks/useDictation';
+import { useChatPersistence } from './hooks/useChatPersistence';
 import ModelSelector from './components/ModelSelector';
 import ChatWindow from './components/ChatWindow';
 import MessageInput from './components/MessageInput';
@@ -10,14 +11,30 @@ import { Bot, Menu, X, PlusCircle, Loader2 } from 'lucide-react';
 function App() {
   const { models, favorites, activeModel, loading, toggleFavorite, selectModel } = useModels();
   const [isCodingMode, setIsCodingMode] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState(null);
   
   const { messages, isTyping, error, sendMessage, stopGeneration, clearChat } = usePuterChat();
   const { isRecording, isTranscribing, startDictation } = useDictation();
   
+  // Initialize chat persistence with auto-save
+  const { currentChatId: autoSavedChatId, saveChat } = useChatPersistence(messages, messages, currentChatId);
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Update current chat ID when it's auto-generated
+  React.useEffect(() => {
+    if (!currentChatId && autoSavedChatId) {
+      setCurrentChatId(autoSavedChatId);
+    }
+  }, [autoSavedChatId, currentChatId]);
 
   const handleSend = (text, imagePayload = null) => {
     sendMessage(text, activeModel, isCodingMode, imagePayload);
+  };
+
+  const handleClearChat = () => {
+    clearChat();
+    setCurrentChatId(null);
   };
 
   const MobileHeader = () => {
@@ -34,7 +51,7 @@ function App() {
           <Menu size={24} />
         </button>
         <span style={{ fontWeight: 500 }}>{models.find(m => m.id === activeModel)?.name || 'New Chat'}</span>
-        <button onClick={clearChat} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
+        <button onClick={handleClearChat} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}>
           <PlusCircle size={24} />
         </button>
       </div>
@@ -68,7 +85,7 @@ function App() {
         </div>
         
         <button 
-          onClick={() => { clearChat(); setIsSidebarOpen(false); }}
+          onClick={() => { handleClearChat(); setIsSidebarOpen(false); }}
           style={{
             display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px',
             background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)',

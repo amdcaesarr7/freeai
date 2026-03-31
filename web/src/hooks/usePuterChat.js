@@ -35,10 +35,7 @@ export function usePuterChat() {
         setMessages((prev) => [...prev, { role: 'assistant', content: 'Generating image...' }]);
         
         const genPrompt = content.replace('/gen ', '').trim();
-        const imageElement = await window.puter.ai.txt2img(genPrompt, {
-          provider: 'xai',
-          model: 'grok-2-image'
-        });
+        const imageElement = await window.puter.ai.txt2img(genPrompt);
         
         // Return the HTMLImageElement source securely
         setMessages((prev) => {
@@ -59,7 +56,7 @@ export function usePuterChat() {
           responseStream = await window.puter.ai.chat(
             content.trim() || 'Describe this image.', 
             imagePayload, 
-            { model: model || 'x-ai/grok-4-1-fast', stream: true }
+            { model: model || 'gpt-4o', stream: true }
           );
         } else {
           // Standard text chat
@@ -71,7 +68,7 @@ export function usePuterChat() {
           ];
 
           responseStream = await window.puter.ai.chat(apiMessages, {
-            model: model || 'x-ai/grok-4-1-fast',
+            model: model || 'grok-beta',
             stream: true
           });
         }

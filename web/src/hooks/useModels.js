@@ -1,14 +1,10 @@
 import { useState, useEffect } from 'react';
 
 const HARDCODED_MODELS = [
-  { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
-  { id: 'x-ai/grok-code-fast-1', name: 'Grok Code Fast', provider: 'xAI' },
-  { id: 'x-ai/grok-4-1-fast', name: 'Grok 4.1 Fast', provider: 'xAI' },
-  { id: 'x-ai/grok-4.20-beta', name: 'Grok 4.20 Beta', provider: 'xAI' },
-  { id: 'x-ai/grok-4-fast', name: 'Grok 4 Fast', provider: 'xAI' },
-  { id: 'x-ai/grok-3-mini-fast', name: 'Grok 3 Mini', provider: 'xAI' },
-  { id: 'x-ai/grok-2', name: 'Grok 2', provider: 'xAI' },
-  { id: 'x-ai/grok-2-image', name: 'Grok 2 Image Gen', provider: 'xAI' }
+  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
+  { id: 'gpt-4o', name: 'GPT-4o (Vision)', provider: 'OpenAI' },
+  { id: 'grok-beta', name: 'Grok Beta', provider: 'xAI' },
+  { id: 'grok-2-1212', name: 'Grok 2', provider: 'xAI' }
 ];
 
 export function useModels() {

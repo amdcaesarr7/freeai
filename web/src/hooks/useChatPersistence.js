@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 
-const CHATS_DIR = 'chats'; // Root-level directory to simplify path issues
-const AUTO_SAVE_INTERVAL = 3000; // Save every 3 seconds
+const STORAGE_KEY = 'caesarr_chats';
+const AUTO_SAVE_INTERVAL = 2000; // Save every 2 seconds
 
 export function useChatPersistence(messages, messageHistory, chatId) {
   // Generate a chat ID if not provided
@@ -13,38 +13,14 @@ export function useChatPersistence(messages, messageHistory, chatId) {
 
   const actualChatId = getChatId(chatId);
 
-  // Ensure chats directory exists with error handling
-  const ensureChatsDir = useCallback(async () => {
-    try {
-      try {
-        await window.puter.fs.stat(CHATS_DIR);
-      } catch (err) {
-        // Directory doesn't exist, create it
-        try {
-          await window.puter.fs.mkdir(CHATS_DIR);
-        } catch (mkdirErr) {
-          // If mkdir fails, try alternative approach
-          console.warn('Failed to create chats directory:', mkdirErr);
-          // Store directly in root as fallback
-          return null;
-        }
-      }
-      return CHATS_DIR;
-    } catch (err) {
-      console.warn('Error ensuring chats directory:', err);
-      return null;
-    }
-  }, []);
-
-  // Save chat to Puter FS
-  const saveChat = useCallback(async (msgs) => {
+  // Save chat to localStorage
+  const saveChat = useCallback((msgs) => {
     if (msgs.length === 0) return;
 
     try {
-      const chatsDir = await ensureChatsDir();
-      const filename = chatsDir ? `${chatsDir}/${actualChatId}.json` : `${actualChatId}.json`;
-
-      const chatData = {
+      const allChats = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      
+      allChats[actualChatId] = {
         id: actualChatId,
         timestamp: new Date().toISOString(),
         messageCount: msgs.length,
@@ -56,75 +32,53 @@ export function useChatPersistence(messages, messageHistory, chatId) {
         }))
       };
 
-      await window.puter.fs.write(filename, JSON.stringify(chatData, null, 2));
-      console.log(`Chat saved: ${filename}`);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allChats));
+      console.log(`Chat saved to localStorage: ${actualChatId}`);
     } catch (err) {
-      console.warn('Failed to save chat to Puter FS:', err);
+      console.warn('Failed to save chat to localStorage:', err);
     }
-  }, [actualChatId, ensureChatsDir]);
+  }, [actualChatId]);
 
-  // Load chat from Puter FS
-  const loadChat = useCallback(async (id) => {
+  // Load chat from localStorage
+  const loadChat = useCallback((id) => {
     try {
-      const chatsDir = await ensureChatsDir();
-      const filename = chatsDir ? `${chatsDir}/${id}.json` : `${id}.json`;
-      
-      const blob = await window.puter.fs.read(filename);
-      const content = await blob.text();
-      const chatData = JSON.parse(content);
-      return chatData.messages;
+      const allChats = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      return allChats[id]?.messages || [];
     } catch (err) {
-      console.warn('Failed to load chat from Puter FS:', err);
+      console.warn('Failed to load chat from localStorage:', err);
       return [];
     }
-  }, [ensureChatsDir]);
+  }, []);
 
   // List all saved chats
-  const loadAllChats = useCallback(async () => {
+  const loadAllChats = useCallback(() => {
     try {
-      const chatsDir = await ensureChatsDir();
-      if (!chatsDir) return [];
-
-      const entries = await window.puter.fs.readdir(chatsDir);
-      const chats = [];
-
-      for (const entry of entries) {
-        if (entry.name.endsWith('.json')) {
-          try {
-            const filename = `${chatsDir}/${entry.name}`;
-            const blob = await window.puter.fs.read(filename);
-            const content = await blob.text();
-            const chatData = JSON.parse(content);
-            chats.push({
-              id: chatData.id,
-              timestamp: chatData.timestamp,
-              messageCount: chatData.messageCount,
-              preview: chatData.messages.slice(0, 1).map(m => m.content.substring(0, 50)).join(' ')
-            });
-          } catch (err) {
-            console.warn(`Failed to load chat ${entry.name}:`, err);
-          }
-        }
-      }
+      const allChats = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      const chats = Object.values(allChats).map(chat => ({
+        id: chat.id,
+        timestamp: chat.timestamp,
+        messageCount: chat.messageCount,
+        preview: chat.messages.slice(0, 1).map(m => m.content.substring(0, 50)).join(' ')
+      }));
 
       // Sort by timestamp (newest first)
       return chats.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     } catch (err) {
-      console.warn('Failed to list chats from Puter FS:', err);
+      console.warn('Failed to list chats from localStorage:', err);
       return [];
     }
-  }, [ensureChatsDir]);
+  }, []);
 
   // Delete a saved chat
-  const deleteChat = useCallback(async (id) => {
+  const deleteChat = useCallback((id) => {
     try {
-      const chatsDir = await ensureChatsDir();
-      const filename = chatsDir ? `${chatsDir}/${id}.json` : `${id}.json`;
-      await window.puter.fs.delete(filename);
+      const allChats = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      delete allChats[id];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allChats));
     } catch (err) {
-      console.warn('Failed to delete chat from Puter FS:', err);
+      console.warn('Failed to delete chat from localStorage:', err);
     }
-  }, [ensureChatsDir]);
+  }, []);
 
   // Auto-save chat when messages change
   useEffect(() => {

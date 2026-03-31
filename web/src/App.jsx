@@ -5,7 +5,7 @@ import { useDictation } from './hooks/useDictation';
 import ModelSelector from './components/ModelSelector';
 import ChatWindow from './components/ChatWindow';
 import MessageInput from './components/MessageInput';
-import { Bot, Menu, X, PlusCircle } from 'lucide-react';
+import { Bot, Menu, X, PlusCircle, Loader2 } from 'lucide-react';
 
 function App() {
   const { models, favorites, activeModel, loading, toggleFavorite, selectModel } = useModels();

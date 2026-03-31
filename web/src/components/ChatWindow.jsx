@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import MessageBubble from './MessageBubble';
 import { Loader2 } from 'lucide-react';
 
-function ChatWindow({ messages, isTyping, error }) {
+function ChatWindow({ messages, isTyping, error, onEditMessage }) {
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -14,11 +14,11 @@ function ChatWindow({ messages, isTyping, error }) {
   if (messages.length === 0) {
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20, textAlign: 'center' }}>
-        <h2 style={{ fontSize: window.innerWidth > 768 ? 48 : 32, backgroundImage: 'linear-gradient(135deg, #fff, var(--accent-secondary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 16 }}>
+        <h2 style={{ fontSize: window.innerWidth > 768 ? 48 : 32, fontWeight: 600, color: '#fff', marginBottom: 16 }}>
           What can I help you with?
         </h2>
         <p style={{ color: 'var(--text-secondary)', maxWidth: 500, fontSize: 16, lineHeight: 1.6 }}>
-          Experience the limitless possibilities with CaesarrGPT & Grok APIs. Switch models anytime, save your favorites, and enjoy persistent conversations.
+          Experience the limitless possibilities with Caesarr AI & multimodal models. Analyze images, generate art, and code projects flawlessly.
         </p>
       </div>
     );
@@ -34,15 +34,19 @@ function ChatWindow({ messages, isTyping, error }) {
         scrollBehavior: 'smooth'
       }}
     >
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
         {messages.map((msg, idx) => (
-          <MessageBubble key={idx} message={msg} />
+          <MessageBubble key={idx} index={idx} message={msg} onEdit={onEditMessage} />
         ))}
         
         {isTyping && messages[messages.length - 1]?.role === 'user' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, opacity: 0.7 }}>
-            <Loader2 size={20} className="spinner" style={{ animation: 'spin 1s linear infinite' }} />
-            <span style={{ fontSize: 14 }}>Grok is thinking...</span>
+          <div style={{ display: 'flex', gap: 16, marginTop: 24 }}>
+             <div className="skeleton" style={{ width: 32, height: 32, borderRadius: '6px' }} />
+             <div style={{ flex: 1 }}>
+               <div className="skeleton skeleton-text" style={{ width: '90%' }} />
+               <div className="skeleton skeleton-text" style={{ width: '70%' }} />
+               <div className="skeleton skeleton-text" style={{ width: '40%' }} />
+             </div>
           </div>
         )}
 

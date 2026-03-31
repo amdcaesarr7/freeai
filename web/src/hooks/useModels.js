@@ -1,41 +1,51 @@
 import { useState, useEffect } from 'react';
 
-const HARDCODED_MODELS = [
-  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
-  { id: 'gpt-4o', name: 'GPT-4o (Vision)', provider: 'OpenAI' },
-  { id: 'grok-beta', name: 'Grok Beta', provider: 'xAI' },
-  { id: 'grok-2-1212', name: 'Grok 2', provider: 'xAI' }
-];
-
 export function useModels() {
-  const [models, setModels] = useState(HARDCODED_MODELS);
-  const [favorites, setFavorites] = useState(['x-ai/grok-4-1-fast']);
-  const [activeModel, setActiveModel] = useState(favorites[0] || 'x-ai/grok-4-1-fast');
+  const [models, setModels] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [activeModel, setActiveModel] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Attempt to fetch dynamic providers if available via Puter
   useEffect(() => {
-    if (!window.puter) return;
-    
-    // Puter.js currently returns providers, we merge it with our hardcoded list if needed.
-    window.puter.ai.listModelProviders().then(providers => {
-      console.log('Available Puter Providers:', providers);
-      // Not structurally updating models yet, fallback to our hardcoded robust dict since the user specified exact Grok model ids.
-    }).catch(console.error);
+    async function fetchModels() {
+      try {
+        setLoading(true);
+        // Fetch real-time available models from Puter
+        const availableModels = await window.puter.ai.listModels();
+        
+        // Clean and format the list
+        const formattedModels = availableModels.map(m => ({
+          id: m.id,
+          name: m.name || m.id,
+          provider: m.provider
+        }));
+
+        setModels(formattedModels);
+
+        // Set default active model (prefer Claude or Grok if found)
+        const defaultChoice = formattedModels.find(m => m.id.includes('claude-3-5-sonnet')) || 
+                              formattedModels.find(m => m.id.includes('grok')) || 
+                              formattedModels[0];
+                              
+        if (defaultChoice) setActiveModel(defaultChoice.id);
+
+      } catch (err) {
+        console.error("Failed to list Puter models:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchModels();
   }, []);
 
-  const toggleFavorite = (modelId) => {
-    setFavorites(prev => {
-      let newFavs;
-      if (prev.includes(modelId)) {
-        newFavs = prev.filter(id => id !== modelId);
-      } else {
-        newFavs = [...prev, modelId];
-      }
-      return newFavs;
-    });
+  const toggleFavorite = (id) => {
+    setFavorites(prev => 
+      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+    );
   };
 
-  const selectModel = (modelId) => setActiveModel(modelId);
+  const selectModel = (id) => setActiveModel(id);
 
-  return { models, favorites, activeModel, toggleFavorite, selectModel };
+  return { models, favorites, activeModel, loading, toggleFavorite, selectModel };
 }

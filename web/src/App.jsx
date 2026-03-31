@@ -8,7 +8,7 @@ import MessageInput from './components/MessageInput';
 import { Bot, Menu, X, PlusCircle } from 'lucide-react';
 
 function App() {
-  const { models, favorites, activeModel, toggleFavorite, selectModel } = useModels();
+  const { models, favorites, activeModel, loading, toggleFavorite, selectModel } = useModels();
   const [isCodingMode, setIsCodingMode] = useState(false);
   
   const { messages, isTyping, error, sendMessage, stopGeneration, clearChat } = usePuterChat();
@@ -79,13 +79,19 @@ function App() {
           <span style={{ fontWeight: 500 }}>New Chat</span>
         </button>
         
-        <ModelSelector 
-          models={models} 
-          favorites={favorites} 
-          activeModel={activeModel} 
-          onToggleFavorite={toggleFavorite} 
-          onSelectModel={(m) => { selectModel(m); setIsSidebarOpen(false); }} 
-        />
+        {loading ? (
+          <div style={{ padding: 20, textAlign: 'center', opacity: 0.5 }}>
+            <Loader2 size={24} className="spinner" style={{ margin: '0 auto' }} />
+          </div>
+        ) : (
+          <ModelSelector 
+            models={models} 
+            favorites={favorites} 
+            activeModel={activeModel} 
+            onToggleFavorite={toggleFavorite} 
+            onSelectModel={(m) => { selectModel(m); setIsSidebarOpen(false); }} 
+          />
+        )}
 
         <div style={{ marginTop: 'auto', paddingTop: 20, borderTop: '1px solid var(--border-subtle)' }}>
            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: isCodingMode ? '#10b981' : 'var(--text-secondary)' }}>

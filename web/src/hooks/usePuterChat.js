@@ -4,12 +4,34 @@ const STANDARD_SYSTEM_PROMPT = `The assistant is Grok, created by xAI. The curre
 Grok is intellectually curious, witty, and highly intelligent. Grok answers directly and straightforwardly.
 CRITICAL INSTRUCTION: You MUST remember the last 10 messages of this conversation context flawlessly so that the conversation feels deeply persistent and uninterrupted.`;
 
-const CODING_SYSTEM_PROMPT = `You are an elite, max-stress 10x developer AI.
-CRITICAL DIRECTIVES:
-1. MAX STRESS CODING MODE IS ACTIVE. 
-2. ZERO conversational filler. NO greetings, NO affirmations like "Certainly" or "Here is the code".
-3. Provide ONLY the absolute best, most optimal code possible. Explain logic concisely only if complex.
-4. You have full awareness of the conversation history.`;
+const CODING_SYSTEM_PROMPT = `You are an AI coding assistant, powered by Grok. You operate in CaesarrAI.
+Always respond in Spanish.
+
+<goal> You are Grok, a helpful search and coding assistant. Your goal is to write an accurate, detailed, and comprehensive answer to the Query. Your answer must be correct, high-quality, well-formatted, and written by an expert using an unbiased and journalistic tone. </goal>
+
+<format_rules>
+NEVER start the answer with a header.
+Use Level 2 headers (##) for sections.
+Use bolding to emphasize specific words.
+Wrap all math expressions in LaTeX using \\( and \\) for inline and \\[ and \\] for block formulas.
+Include code snippets using Markdown code blocks with language identifiers.
+</format_rules>
+
+<making_code_changes>
+When the user is asking for edits to their code, please output a simplified version of the code block that highlights the changes necessary and adds comments to indicate where unchanged code has been skipped. For example:
+\`\`\`language:path/to/file
+// ... existing code ...
+{{ edit_1 }}
+// ... existing code ...
+\`\`\`
+</making_code_changes>
+
+<restrictions> 
+NEVER use moralization or hedging language. 
+NEVER begin your answer with a header. 
+NEVER use emojis. 
+NEVER end your answer with a question. 
+</restrictions>`;
 
 export function usePuterChat() {
   const [messages, setMessages] = useState([]);
@@ -17,30 +39,31 @@ export function usePuterChat() {
   const [error, setError] = useState(null);
   const abortControllerRef = useRef(null);
 
-  const sendMessage = useCallback(async (content, model, isCodingMode, imagePayload = null) => {
+  const sendMessage = useCallback(async (content, modelId, isCodingMode, imagePayload = null) => {
     if (!content.trim() && !imagePayload) return;
 
-    const isImageGen = content.trim().startsWith('/gen ');
-    
+    setIsTyping(true);
+    setError(null);
+    abortControllerRef.current = new AbortController();
+
     // Add user message to UI
     const userMessage = { role: 'user', content: content.trim(), image: imagePayload };
     setMessages((prev) => [...prev, userMessage]);
-    setIsTyping(true);
-    setError(null);
-
-    abortControllerRef.current = new AbortController();
 
     try {
-      if (isImageGen) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: 'Generating image...' }]);
+      const availableModels = await window.puter.ai.listModels();
+      
+      // Handle /gen (Generative Image)
+      if (content.trim().startsWith('/gen ')) {
+        const imageModel = availableModels.find(m => m.id.includes('gemini') || m.id.includes('gpt-image')) || { id: 'gpt-image-1-mini' };
         
+        setMessages((prev) => [...prev, { role: 'assistant', content: 'Generating image...' }]);
         const genPrompt = content.replace('/gen ', '').trim();
+        
         const imageElement = await window.puter.ai.txt2img(genPrompt, {
-          model: 'gemini-2.5-flash-image-preview',
-          ratio: { w: 1024, h: 1024 }
+          model: imageModel.id
         });
         
-        // Return the HTMLImageElement source securely
         setMessages((prev) => {
           const newMsgs = [...prev];
           newMsgs[newMsgs.length - 1] = { role: 'assistant', content: '', image: imageElement.src };
@@ -48,33 +71,50 @@ export function usePuterChat() {
         });
 
       } else {
-        // Chat or Vision Mode
+        // Handle Chat (Text or Vision)
         const systemPrompt = isCodingMode ? CODING_SYSTEM_PROMPT : STANDARD_SYSTEM_PROMPT;
         
-        let responseStream;
+        const verifiedModel = availableModels.find(m => m.id === modelId) || 
+                             availableModels.find(m => m.id.includes('sonnet')) ||
+                             availableModels.find(m => m.id.includes('claude')) ||
+                             availableModels[0];
+
+        if (!verifiedModel) throw new Error("No AI models available.");
+
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
-        if (imagePayload) {
-          // Vision Mode ignores history to guarantee format compatibility
-          responseStream = await window.puter.ai.chat(
-            content.trim() || 'Describe this image.', 
-            imagePayload, 
-            { model: model || 'gpt-4o', stream: true }
-          );
-        } else {
-          // Standard text chat
-          const recentMessages = messages.map(m => ({ role: m.role, content: m.content })).slice(-10);
-          const apiMessages = [
-            { role: 'system', content: systemPrompt },
-            ...recentMessages,
-            { role: 'user', content: content.trim() }
-          ];
+        // Construct messages in the more granular format required by Anthropic/Claude
+        const recentMessages = messages.map(m => {
+          // If message has an image and text, use the array format
+          if (m.image) {
+            return {
+              role: m.role,
+              content: [
+                { type: 'text', text: m.content || 'Attached image' },
+                { type: 'file', puter_path: m.image } // Puter treats imageUrl as a path/file context
+              ]
+            };
+          }
+          return { role: m.role, content: m.content };
+        }).slice(-10);
 
-          responseStream = await window.puter.ai.chat(apiMessages, {
-            model: model || 'grok-beta',
-            stream: true
-          });
-        }
+        const currentContent = imagePayload 
+          ? [
+              { type: 'text', text: content.trim() || 'What is in this image?' },
+              { type: 'file', puter_path: imagePayload }
+            ]
+          : content.trim();
+
+        const apiMessages = [
+          { role: 'system', content: systemPrompt },
+          ...recentMessages,
+          { role: 'user', content: currentContent }
+        ];
+
+        const responseStream = await window.puter.ai.chat(apiMessages, {
+          model: verifiedModel.id,
+          stream: true
+        });
 
         for await (const chunk of responseStream) {
           if (chunk?.text) {
@@ -91,7 +131,7 @@ export function usePuterChat() {
       setError(err?.message || "Failed to communicate with AI.");
       setMessages((prev) => {
         const newMsgs = [...prev];
-        if (newMsgs[newMsgs.length - 1].role === 'assistant' && !newMsgs[newMsgs.length - 1].content && !newMsgs[newMsgs.length - 1].image) {
+        if (newMsgs[newMsgs.length - 1]?.role === 'assistant' && !newMsgs[newMsgs.length - 1]?.content && !newMsgs[newMsgs.length - 1]?.image) {
           newMsgs.pop();
         }
         return newMsgs;

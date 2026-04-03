@@ -7,6 +7,7 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
   const [attachment, setAttachment] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showCommands, setShowCommands] = useState(false);
+  const [selectedImageModel, setSelectedImageModel] = useState('gpt-image-1-mini');
   
   const { uploadImage, isUploading } = useImageUpload();
   const fileInputRef = useRef(null);
@@ -57,7 +58,7 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
       if (!finalImageUrl) return;
     }
 
-    onSend(text, finalImageUrl);
+    onSend(text, finalImageUrl, text.trim().startsWith('/gen ') ? selectedImageModel : null);
     setText('');
     setShowCommands(false);
     clearAttachment();
@@ -106,6 +107,33 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
               <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Generate an AI image</div>
             </div>
           </button>
+        </div>
+      )}
+
+      {/* Image Gen Selector */}
+      {text.trim().startsWith('/gen') && !showCommands && (
+        <div style={{
+          position: 'absolute', bottom: '100%', left: 0, marginBottom: 12,
+          background: 'var(--bg-sidebar)', border: '1px solid var(--border-subtle)',
+          borderRadius: 12, padding: '6px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          display: 'flex', gap: 6, zIndex: 15
+        }}>
+           <div style={{ fontSize: 10, alignSelf: 'center', margin: '0 6px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Image AI:</div>
+           {['gpt-image-1-mini', 'grok-2-image'].map(m => (
+             <button
+               key={m}
+               type="button"
+               onClick={() => setSelectedImageModel(m)}
+               style={{
+                 background: selectedImageModel === m ? 'var(--text-primary)' : 'rgba(255,255,255,0.05)',
+                 color: selectedImageModel === m ? 'var(--bg-primary)' : 'var(--text-primary)', 
+                 border: 'none', borderRadius: 8, padding: '4px 10px', fontSize: 11, cursor: 'pointer', fontWeight: 500,
+                 transition: 'all 0.2s'
+               }}
+             >
+               {m === 'gpt-image-1-mini' ? 'OpenAI DALL-E' : 'xAI Grok'}
+             </button>
+           ))}
         </div>
       )}
 

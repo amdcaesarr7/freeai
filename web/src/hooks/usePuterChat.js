@@ -14,16 +14,18 @@ export function usePuterChat() {
   const [error, setError] = useState(null);
   const abortControllerRef = useRef(null);
 
-  const sendMessage = useCallback(async (content, modelId, isCodingMode, imagePayload = null) => {
+  const sendMessage = useCallback(async (content, modelId, isCodingMode, imagePayload = null, overrideHistory = null, imageModelOverride = null) => {
     if (!content.trim() && !imagePayload) return;
 
     setIsTyping(true);
     setError(null);
     abortControllerRef.current = new AbortController();
 
+    const baseHistory = overrideHistory !== null ? overrideHistory : messages;
+
     // Add user message to UI
     const userMessage = { role: 'user', content: content.trim(), image: imagePayload };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages([...baseHistory, userMessage]);
 
     try {
       const availableModels = await window.puter.ai.listModels();
@@ -33,14 +35,35 @@ export function usePuterChat() {
         setMessages((prev) => [...prev, { role: 'assistant', content: 'Generating image...' }]);
         const genPrompt = content.replace('/gen ', '').trim();
         
-        // Use default image model instead of searching for potentially invalid IDs
-        const imageElement = await window.puter.ai.txt2img(genPrompt);
-        
-        setMessages((prev) => {
-          const newMsgs = [...prev];
-          newMsgs[newMsgs.length - 1] = { role: 'assistant', content: '', image: imageElement.src };
-          return newMsgs;
-        });
+        // Fallback robust logic for image generation
+        try {
+          let imageElement;
+          const targetImageModel = imageModelOverride || 'gpt-image-1-mini';
+          
+          if (targetImageModel) {
+             imageElement = await window.puter.ai.txt2img(genPrompt, { model: targetImageModel });
+          } else {
+             imageElement = await window.puter.ai.txt2img(genPrompt);
+          }
+          
+          setMessages((prev) => {
+            const newMsgs = [...prev];
+            newMsgs[newMsgs.length - 1] = { role: 'assistant', content: '', image: imageElement.src };
+            return newMsgs;
+          });
+        } catch (imgError) {
+          console.warn("Primary image generation failed, attempting fallback...", imgError);
+          try {
+            const fallbackElement = await window.puter.ai.txt2img(genPrompt, { provider: 'openai-image-generation' });
+            setMessages((prev) => {
+              const newMsgs = [...prev];
+              newMsgs[newMsgs.length - 1] = { role: 'assistant', content: '', image: fallbackElement.src };
+              return newMsgs;
+            });
+          } catch (fallbackError) {
+             throw new Error("Failed to generate image on all available providers.");
+          }
+        }
 
       } else {
         // Handle Chat (Text or Vision)
@@ -56,7 +79,7 @@ export function usePuterChat() {
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
         // Construct messages in the format required by Puter AI
-        const recentMessages = messages.map(m => {
+        const recentMessages = baseHistory.map(m => {
           // If message has an image and text, use the array format
           if (m.image) {
             return {
@@ -165,5 +188,13 @@ export function usePuterChat() {
     setError(null);
   }, []);
 
-  return { messages, isTyping, error, sendMessage, stopGeneration, clearChat };
+  const editMessage = useCallback((index, newContent, activeModel, isCodingMode) => {
+    // Get history up to the edited message (excluding it)
+    const historySlice = messages.slice(0, index);
+    
+    // Fire it off as a new message using the override history
+    sendMessage(newContent, activeModel, isCodingMode, null, historySlice);
+  }, [messages, sendMessage]);
+
+  return { messages, isTyping, error, sendMessage, stopGeneration, clearChat, editMessage };
 }

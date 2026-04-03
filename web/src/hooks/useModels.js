@@ -30,6 +30,7 @@ export function useModels() {
         const formattedModels = availableModels
           .filter(m => {
             const id = m.id.toLowerCase();
+            if (id.includes('image') || id.includes('dall-e') || id.includes('vision')) return false;
             return SUPPORTED_MODELS.some(supportedId => id.includes(supportedId));
           })
           .map(m => ({

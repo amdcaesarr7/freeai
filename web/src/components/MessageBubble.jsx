@@ -1,9 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Bot, User } from 'lucide-react';
+import { Bot, User, Edit2 } from 'lucide-react';
 
-function MessageBubble({ message }) {
+function MessageBubble({ message, index, onEdit }) {
   const isUser = message.role === 'user';
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
+
+  const handleSaveEdit = () => {
+    if (editContent.trim() && editContent !== message.content && onEdit) {
+      onEdit(index, editContent);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditContent(message.content);
+    setIsEditing(false);
+  };
   
   if (message.role === 'system') return null;
 
@@ -48,11 +62,44 @@ function MessageBubble({ message }) {
         )}
 
         {/* Render Text Content */}
-        {message.content === 'Generating image...' ? (
+        {isEditing ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', marginTop: 8 }}>
+            <textarea 
+               value={editContent} 
+               onChange={(e) => setEditContent(e.target.value)}
+               className="edit-textarea"
+               style={{ 
+                 width: '100%', background: 'var(--bg-primary)', color: 'var(--text-primary)', 
+                 border: '1px solid var(--accent-primary)', padding: '12px 14px', borderRadius: 12, 
+                 minHeight: 120, outline: 'none', resize: 'vertical', fontFamily: 'inherit',
+                 fontSize: 14, lineHeight: 1.5,
+               }}
+            />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+               <button onClick={handleCancelEdit} style={{ background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer', padding: '8px 16px', borderRadius: 8 }}>Cancel</button>
+               <button onClick={handleSaveEdit} style={{ background: 'var(--accent-primary)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', padding: '8px 16px', fontWeight: 500 }}>Save & Resend</button>
+            </div>
+          </div>
+        ) : message.content === 'Generating image...' ? (
           <div className="skeleton skeleton-image" style={{ maxWidth: 400 }} />
         ) : message.content && (
           isUser ? (
-            <div style={{ whiteSpace: 'pre-wrap' }}>{message.content}</div>
+            <div className="user-message-container" style={{ position: 'relative', whiteSpace: 'pre-wrap' }}>
+              {message.content}
+              <button 
+                onClick={() => { setEditContent(message.content); setIsEditing(true); }}
+                className="edit-button mobile-only-touch" 
+                style={{ 
+                  position: 'absolute', right: -32, top: 0, background: 'var(--bg-sidebar)', 
+                  border: '1px solid var(--border-subtle)', borderRadius: '50%', width: 28, height: 28, 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', 
+                  color: 'var(--text-secondary)' 
+                }}
+                title="Edit and resend"
+              >
+                <Edit2 size={12} />
+              </button>
+            </div>
           ) : (
             <div className="markdown-body">
               <ReactMarkdown

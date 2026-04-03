@@ -172,3 +172,28 @@ button {
     background-color: var(--text-primary);
   }
 }
+
+/* Edit Prompt Button styling */
+.user-message-container .edit-button {
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.user-message-container:hover .edit-button {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (max-width: 768px) {
+  .user-message-container .edit-button {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  .sidebar {
+    width: 260px;
+  }
+
+  .chat-footer {
+    padding: 0 10px 14px 10px !important;
+  }
+}

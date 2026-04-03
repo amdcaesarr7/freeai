@@ -13,7 +13,7 @@ function App() {
   const [isCodingMode, setIsCodingMode] = useState(false);
   const [currentChatId, setCurrentChatId] = useState(null);
   
-  const { messages, isTyping, error, sendMessage, stopGeneration, clearChat } = usePuterChat();
+  const { messages, isTyping, error, sendMessage, stopGeneration, clearChat, editMessage } = usePuterChat();
   const { isRecording, isTranscribing, startDictation } = useDictation();
   
   // Initialize chat persistence with auto-save
@@ -28,8 +28,12 @@ function App() {
     }
   }, [autoSavedChatId, currentChatId]);
 
-  const handleSend = (text, imagePayload = null) => {
-    sendMessage(text, activeModel, isCodingMode, imagePayload);
+  const handleSend = (text, imagePayload = null, imageModelId = null) => {
+    sendMessage(text, activeModel, isCodingMode, imagePayload, null, imageModelId);
+  };
+
+  const handleEdit = (index, newContent) => {
+    editMessage(index, newContent, activeModel, isCodingMode);
   };
 
   const handleClearChat = () => {
@@ -148,9 +152,9 @@ function App() {
           </div>
         </div>
 
-        <ChatWindow messages={messages} isTyping={isTyping} error={error} />
+        <ChatWindow messages={messages} isTyping={isTyping} error={error} onEdit={handleEdit} />
         
-        <div style={{ padding: '0 20px 24px 20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+        <div className="chat-footer" style={{ padding: '0 20px 24px 20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
           <div className="chat-container">
             <MessageInput 
               onSend={handleSend} 

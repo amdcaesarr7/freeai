@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import MessageBubble from './MessageBubble';
 
-function ChatWindow({ messages, isTyping, error }) {
+function ChatWindow({ messages, isTyping, error, onEdit }) {
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ function ChatWindow({ messages, isTyping, error }) {
     >
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         {messages.map((msg, idx) => (
-          <MessageBubble key={idx} message={msg} />
+          <MessageBubble key={idx} index={idx} message={msg} onEdit={onEdit} />
         ))}
         
         {isTyping && messages[messages.length - 1]?.role === 'user' && (

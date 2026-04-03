@@ -17,7 +17,7 @@ function ChatWindow({ messages, isTyping, error }) {
           What can I help you with?
         </h2>
           <p style={{ color: 'var(--text-secondary)', maxWidth: 500, fontSize: 16, lineHeight: 1.6 }}>
-          Experience the limitless possibilities with CaesarrSLLM & Grok APIs. Switch models anytime, save your favorites, and enjoy persistent conversations.
+          Experience the limitless possibilities with Caesarr'SLLM. Switch models anytime, save your favorites, and enjoy persistent conversations.
         </p>
       </div>
     );

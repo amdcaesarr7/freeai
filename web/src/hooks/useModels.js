@@ -13,12 +13,22 @@ export function useModels() {
         // Fetch real-time available models from Puter
         const availableModels = await window.puter.ai.listModels();
         
-        // Clean and format the list
-        const formattedModels = availableModels.map(m => ({
-          id: m.id,
-          name: m.name || m.id,
-          provider: m.provider
-        }));
+        // Clean and format the list, filtering out non-chat models
+        const formattedModels = availableModels
+          .filter(m => {
+            const id = m.id.toLowerCase();
+            return !id.includes('ts') && // covers tts
+                   !id.includes('whisper') &&
+                   !id.includes('embedding') &&
+                   !id.includes('dall-e') &&
+                   !id.includes('midjourney') &&
+                   !id.includes('image');
+          })
+          .map(m => ({
+            id: m.id,
+            name: m.name || m.id,
+            provider: m.provider
+          }));
 
         setModels(formattedModels);
 

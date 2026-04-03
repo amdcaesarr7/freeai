@@ -80,25 +80,64 @@ export function usePuterChat() {
             ]
           : content.trim();
 
-        const apiMessages = [
-          { role: 'system', content: systemPrompt },
-          ...recentMessages,
-          { role: 'user', content: currentContent }
-        ];
+        const isO1Model = verifiedModel.id.toLowerCase().includes('o1-');
+        let apiMessages = [];
 
-        const responseStream = await window.puter.ai.chat(apiMessages, false, {
+        if (isO1Model) {
+            // o1 models do not support the 'system' role
+            let o1Content = currentContent;
+            if (Array.isArray(currentContent)) {
+               const textObj = currentContent.find(c => c.type === 'text');
+               const userText = textObj ? textObj.text : "Image attached.";
+               o1Content = [
+                  { type: 'text', text: `[System Instructions: ${systemPrompt}]\n\n${userText}` },
+                  ...currentContent.filter(c => c.type !== 'text')
+               ];
+            } else {
+               o1Content = `[System Instructions: ${systemPrompt}]\n\n${currentContent}`;
+            }
+
+            apiMessages = [
+              ...recentMessages,
+              { role: 'user', content: o1Content }
+            ];
+        } else {
+            apiMessages = [
+              { role: 'system', content: systemPrompt },
+              ...recentMessages,
+              { role: 'user', content: currentContent }
+            ];
+        }
+
+        const supportsStream = !isO1Model;
+
+        const responseStream = await window.puter.ai.chat(apiMessages, {
           model: verifiedModel.id,
-          stream: true
+          stream: supportsStream
         });
 
-        for await (const chunk of responseStream) {
-          if (chunk?.text) {
-            setMessages((prev) => {
-              const newMsgs = [...prev];
-              newMsgs[newMsgs.length - 1].content += chunk.text;
-              return newMsgs;
-            });
-          }
+        if (supportsStream) {
+            for await (const chunk of responseStream) {
+              if (chunk?.text) {
+                setMessages((prev) => {
+                  const newMsgs = [...prev];
+                  newMsgs[newMsgs.length - 1].content += chunk.text;
+                  return newMsgs;
+                });
+              }
+            }
+        } else {
+            const responseText = typeof responseStream === 'string' 
+              ? responseStream 
+              : responseStream?.message?.content || responseStream?.text || "";
+
+            if (responseText) {
+              setMessages((prev) => {
+                const newMsgs = [...prev];
+                newMsgs[newMsgs.length - 1].content += responseText;
+                return newMsgs;
+              });
+            }
         }
       }
     } catch (err) {

@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Square, Loader2, Paperclip, X } from 'lucide-react';
+import { Send, Mic, Square, Loader2, Paperclip, X, Image as ImageIcon } from 'lucide-react';
 import { useImageUpload } from '../hooks/useImageUpload';
 
 function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTranscribing }) {
   const [text, setText] = useState('');
   const [attachment, setAttachment] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [showCommands, setShowCommands] = useState(false);
   
   const { uploadImage, isUploading } = useImageUpload();
   const fileInputRef = useRef(null);
@@ -18,11 +19,23 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
     }
   }, [text]);
 
+  const handleTextChange = (e) => {
+    const val = e.target.value;
+    setText(val);
+    
+    if (val === '/') {
+      setShowCommands(true);
+    } else if (!val.startsWith('/')) {
+      setShowCommands(false);
+    }
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setAttachment(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setShowCommands(false);
     }
   };
 
@@ -33,7 +46,7 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!text.trim() && !attachment) return;
     if (isTyping || isUploading) return;
 
@@ -41,11 +54,12 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
     
     if (attachment) {
       finalImageUrl = await uploadImage(attachment);
-      if (!finalImageUrl) return; // Wait for upload err handling if desired
+      if (!finalImageUrl) return;
     }
 
     onSend(text, finalImageUrl);
     setText('');
+    setShowCommands(false);
     clearAttachment();
   };
 
@@ -56,9 +70,45 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
     }
   };
 
+  const handleCommandClick = (cmd) => {
+    setText(cmd + ' ');
+    setShowCommands(false);
+    textareaRef.current?.focus();
+  };
+
   return (
     <div style={{ width: '100%', position: 'relative' }}>
       
+      {/* Commands Popover */}
+      {showCommands && (
+        <div style={{
+          position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: 12,
+          background: 'var(--bg-sidebar)', border: '1px solid var(--border-subtle)',
+          borderRadius: 16, padding: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          zIndex: 20
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', padding: '8px 12px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Available Commands</div>
+          <button 
+            type="button"
+            onClick={() => handleCommandClick('/gen')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '10px 12px',
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: 10, cursor: 'pointer', textAlign: 'left', color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+          >
+            <div style={{ background: 'var(--accent-primary)', color: '#fff', padding: 6, borderRadius: 8 }}>
+              <ImageIcon size={16} />
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>/gen &lt;prompt&gt;</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Generate an AI image</div>
+            </div>
+          </button>
+        </div>
+      )}
+
       {/* Upload Preview Container */}
       {previewUrl && (
         <div style={{ 
@@ -82,15 +132,32 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
       <form 
         onSubmit={handleSubmit}
         style={{ 
-          display: 'flex', alignItems: 'flex-end', gap: 10, padding: '12px 14px', 
+          display: 'flex', alignItems: 'flex-end', gap: 8, padding: '12px 14px', 
           background: 'var(--bg-sidebar)', border: '1px solid var(--border-subtle)',
-          borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+          borderRadius: 24, boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
         }}
       >
         <button 
           type="button"
+          onClick={() => {
+            setText('/gen ');
+            textareaRef.current?.focus();
+          }}
+          disabled={isTyping || isUploading}
+          title="Generate Image"
+          style={{
+            background: 'transparent', border: 'none', color: text.startsWith('/gen') ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+          }}
+        >
+          <ImageIcon size={20} />
+        </button>
+
+        <button 
+          type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={isTyping || isUploading}
+          title="Attach Image"
           style={{
             background: 'transparent', border: 'none', color: attachment ? 'var(--text-primary)' : 'var(--text-secondary)',
             padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
@@ -111,6 +178,7 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
           type="button"
           onClick={() => isRecording ? window.stopDictation?.() : window.stopDictation = onDictate?.((t) => setText(p => p ? (p + ' ' + t) : t))}
           disabled={isTyping || isUploading || isTranscribing}
+          title="Dictate"
           style={{
             background: 'transparent',
             border: 'none',
@@ -125,9 +193,9 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
         <textarea
           ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleTextChange}
           onKeyDown={handleKeyDown}
-          placeholder={isRecording ? "Listening..." : "Message Caesarr AI..."}
+          placeholder={isRecording ? "Listening..." : "Message Caesarr AI... (type '/' for commands)"}
           disabled={isTyping || isUploading || isTranscribing}
           style={{
             flex: 1, background: 'transparent', border: 'none', color: 'var(--text-primary)', fontSize: 15,
@@ -141,7 +209,7 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
             type="button" onClick={onStop}
             style={{
               background: 'var(--text-primary)', border: 'none', color: 'var(--bg-primary)', 
-              borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+              borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0
             }}
           >
             <Square size={14} fill="currentColor" />
@@ -154,7 +222,7 @@ function MessageInput({ onSend, isTyping, onStop, onDictate, isRecording, isTran
               background: (text.trim() || attachment) ? 'var(--text-primary)' : 'var(--border-subtle)',
               border: 'none', color: 'var(--bg-primary)', 
               borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: (text.trim() || attachment) ? 'pointer' : 'default', transition: 'background 0.2s',
+              cursor: (text.trim() || attachment) ? 'pointer' : 'default', transition: 'background 0.2s', flexShrink: 0
             }}
           >
             <Send size={16} style={{ transform: 'translateX(1px) translateY(1px)' }} />

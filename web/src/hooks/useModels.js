@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'react';
 
+const SUPPORTED_MODELS = [
+  'claude-3-5-sonnet',
+  'claude-3-haiku',
+  'gpt-4o',
+  'gpt-4o-mini',
+  'gemini-1.5-pro',
+  'gemini-1.5-flash',
+  'llama-3.1-70b',
+  'llama-3.1-8b',
+  'grok-2'
+];
+
 export function useModels() {
   const [models, setModels] = useState([]);
   const [favorites, setFavorites] = useState([]);
@@ -13,16 +25,11 @@ export function useModels() {
         // Fetch real-time available models from Puter
         const availableModels = await window.puter.ai.listModels();
         
-        // Clean and format the list, filtering out non-chat models
+        // Clean and format the list, filtering to only contain supported robust chat models
         const formattedModels = availableModels
           .filter(m => {
             const id = m.id.toLowerCase();
-            return !id.includes('ts') && // covers tts
-                   !id.includes('whisper') &&
-                   !id.includes('embedding') &&
-                   !id.includes('dall-e') &&
-                   !id.includes('midjourney') &&
-                   !id.includes('image');
+            return SUPPORTED_MODELS.some(supportedId => id.includes(supportedId));
           })
           .map(m => ({
             id: m.id,
@@ -30,12 +37,15 @@ export function useModels() {
             provider: m.provider
           }));
 
-        setModels(formattedModels);
+        // Deduplicate in case puter returns multiple versions of the same model that matches our includes
+        const uniqueModels = Array.from(new Map(formattedModels.map(item => [item.id, item])).values());
+
+        setModels(uniqueModels);
 
         // Set default active model (prefer Claude or Grok if found)
-        const defaultChoice = formattedModels.find(m => m.id.includes('claude-3-5-sonnet')) || 
-                              formattedModels.find(m => m.id.includes('grok')) || 
-                              formattedModels[0];
+        const defaultChoice = uniqueModels.find(m => m.id.includes('claude-3-5-sonnet')) || 
+                              uniqueModels.find(m => m.id.includes('grok')) || 
+                              uniqueModels[0];
                               
         if (defaultChoice) setActiveModel(defaultChoice.id);
 

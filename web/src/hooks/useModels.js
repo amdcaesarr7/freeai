@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 
 const SUPPORTED_MODELS = [
-  'claude-3-5-sonnet',
-  'claude-3-haiku',
-  'gpt-4o',
-  'gpt-4o-mini',
-  'gemini-1.5-pro',
-  'gemini-1.5-flash',
-  'llama-3.1-70b',
-  'llama-3.1-8b',
-  'grok-2'
+  'claude-sonnet-4-5',
+  'gpt-5.4-nano',
+  'openai/gpt-5.2-chat',
+  'gpt-5',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
+  'reka',
+  'grok-2',
+  'deepseek',
+  'llama'
 ];
 
 export function useModels() {
@@ -43,7 +44,7 @@ export function useModels() {
         setModels(uniqueModels);
 
         // Set default active model (prefer Claude or Grok if found)
-        const defaultChoice = uniqueModels.find(m => m.id.includes('claude-3-5-sonnet')) || 
+        const defaultChoice = uniqueModels.find(m => m.id.includes('claude-sonnet')) || 
                               uniqueModels.find(m => m.id.includes('grok')) || 
                               uniqueModels[0];
                               

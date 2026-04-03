@@ -30,14 +30,11 @@ export function usePuterChat() {
       
       // Handle /gen (Generative Image)
       if (content.trim().startsWith('/gen ')) {
-        const imageModel = availableModels.find(m => m.id.includes('gemini') || m.id.includes('gpt-image')) || { id: 'gpt-image-1-mini' };
-        
         setMessages((prev) => [...prev, { role: 'assistant', content: 'Generating image...' }]);
         const genPrompt = content.replace('/gen ', '').trim();
         
-        const imageElement = await window.puter.ai.txt2img(genPrompt, {
-          model: imageModel.id
-        });
+        // Use default image model instead of searching for potentially invalid IDs
+        const imageElement = await window.puter.ai.txt2img(genPrompt);
         
         setMessages((prev) => {
           const newMsgs = [...prev];

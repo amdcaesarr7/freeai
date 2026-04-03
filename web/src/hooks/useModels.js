@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 
 const SUPPORTED_MODELS = [
-  'claude-sonnet-4-5',
-  'gpt-5.4-nano',
-  'openai/gpt-5.2-chat',
-  'gpt-5',
-  'gemini-2.5-flash-lite',
+  'claude-3-5-sonnet',
+  'claude-3-haiku',
+  'gpt-4o',
+  'gpt-4o-mini',
+  'gemini-1.5-pro',
   'gemini-2.5-flash',
-  'reka',
-  'grok-2',
+  'gemini-1.5-flash',
+  'llama-3',
   'deepseek',
-  'llama'
+  'grok'
 ];
 
 export function useModels() {

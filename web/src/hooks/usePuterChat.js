@@ -69,10 +69,12 @@ export function usePuterChat() {
         // Handle Chat (Text or Vision)
         const systemPrompt = isCodingMode ? CODING_SYSTEM_PROMPT : STANDARD_SYSTEM_PROMPT;
         
-        const verifiedModel = availableModels.find(m => m.id === modelId) || 
-                             availableModels.find(m => m.id.includes('sonnet')) ||
-                             availableModels.find(m => m.id.includes('claude')) ||
-                             availableModels[0];
+        const textModels = availableModels.filter(m => !m.id.includes('image') && !m.id.includes('dall-e') && !m.id.includes('vision'));
+        
+        const verifiedModel = textModels.find(m => m.id === modelId) || 
+                             textModels.find(m => m.id.includes('sonnet')) ||
+                             textModels.find(m => m.id.includes('claude')) ||
+                             textModels[0];
 
         if (!verifiedModel) throw new Error("No AI models available.");
 
@@ -80,23 +82,23 @@ export function usePuterChat() {
 
         // Construct messages in the format required by Puter AI
         const recentMessages = baseHistory.map(m => {
-          // If message has an image and text, use the array format
-          if (m.image) {
+          // Send image_url arrays ONLY for user messages to comply with LLM specs
+          if (m.image && m.role === 'user') {
             return {
               role: m.role,
               content: [
                 { type: 'text', text: m.content || 'Attached image' },
-                { type: 'file', puter_path: m.image }
+                { type: 'image_url', image_url: { url: m.image } }
               ]
             };
           }
-          return { role: m.role, content: m.content };
+          return { role: m.role, content: m.content || (m.role === 'assistant' && m.image ? "[Generated Image]" : "") };
         }).slice(-10);
 
         const currentContent = imagePayload 
           ? [
               { type: 'text', text: content.trim() || 'What is in this image?' },
-              { type: 'file', puter_path: imagePayload }
+              { type: 'image_url', image_url: { url: imagePayload } }
             ]
           : content.trim();
 

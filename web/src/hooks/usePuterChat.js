@@ -71,10 +71,19 @@ export function usePuterChat() {
         
         const textModels = availableModels.filter(m => !m.id.includes('image') && !m.id.includes('dall-e') && !m.id.includes('vision'));
         
-        const verifiedModel = textModels.find(m => m.id === modelId) || 
-                             textModels.find(m => m.id.includes('sonnet')) ||
-                             textModels.find(m => m.id.includes('claude')) ||
-                             textModels[0];
+        let verifiedModel;
+        
+        // Force a stable standard vision model if doing an image analysis so it never fails!
+        if (imagePayload) {
+           verifiedModel = textModels.find(m => m.id === 'gpt-4o') || 
+                           textModels.find(m => m.id === 'claude-3-5-sonnet') || 
+                           textModels[0];
+        } else {
+           verifiedModel = textModels.find(m => m.id === modelId) || 
+                           textModels.find(m => m.id.includes('sonnet')) ||
+                           textModels.find(m => m.id.includes('claude')) ||
+                           textModels[0];
+        }
 
         if (!verifiedModel) throw new Error("No AI models available.");
 

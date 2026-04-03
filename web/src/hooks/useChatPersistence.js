@@ -58,6 +58,7 @@ export function useChatPersistence(messages, messageHistory, chatId) {
         id: chat.id,
         timestamp: chat.timestamp,
         messageCount: chat.messageCount,
+        title: chat.title || null,
         preview: chat.messages.slice(0, 1).map(m => m.content.substring(0, 50)).join(' ')
       }));
 
@@ -66,6 +67,18 @@ export function useChatPersistence(messages, messageHistory, chatId) {
     } catch (err) {
       console.warn('Failed to list chats from localStorage:', err);
       return [];
+    }
+  }, []);
+
+  const updateChatTitle = useCallback((id, title) => {
+    try {
+      const allChats = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (allChats[id]) {
+        allChats[id].title = title;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(allChats));
+      }
+    } catch (err) {
+      console.warn('Failed to update chat title:', err);
     }
   }, []);
 
@@ -97,6 +110,7 @@ export function useChatPersistence(messages, messageHistory, chatId) {
     loadChat,
     loadAllChats,
     deleteChat,
+    updateChatTitle,
     currentChatId: actualChatId
   };
 }

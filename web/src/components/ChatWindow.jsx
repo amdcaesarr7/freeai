@@ -39,13 +39,18 @@ function ChatWindow({ messages, isTyping, error }) {
         ))}
         
         {isTyping && messages[messages.length - 1]?.role === 'user' && (
-          <div style={{ display: 'flex', gap: 16, marginTop: 24 }}>
-             <div className="skeleton" style={{ width: 32, height: 32, borderRadius: '6px' }} />
-             <div style={{ flex: 1 }}>
-               <div className="skeleton skeleton-text" style={{ width: '90%' }} />
-               <div className="skeleton skeleton-text" style={{ width: '70%' }} />
-               <div className="skeleton skeleton-text" style={{ width: '40%' }} />
-             </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 24, paddingLeft: 4 }}>
+            <div style={{ 
+              width: 28, height: 28, borderRadius: '6px', background: 'var(--accent-primary)', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}>
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+            </div>
+            <div className="typing-indicator">
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+              <div className="typing-dot"></div>
+            </div>
           </div>
         )}
 
